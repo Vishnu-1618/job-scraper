@@ -21,8 +21,6 @@ export async function GET(request: Request) {
         const pageSize = 1000;
         let hasMore = true;
 
-        const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
         while (hasMore && allMatches.length < 5000) {
             const { data: batch, error } = await supabase
                 .from('job_matches')
@@ -45,7 +43,6 @@ export async function GET(request: Request) {
                     )
                 `)
                 .eq('user_id', userId)
-                .gte('jobs.created_at', THIRTY_DAYS_AGO)
                 .order('similarity_score', { ascending: false })
                 .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -65,25 +62,13 @@ export async function GET(request: Request) {
         }
 
         // --- Filtering and Deduplication ---
-        const THIRTY_DAYS_AGO_MS = Date.now() - 30 * 24 * 60 * 60 * 1000;
         const seen = new Map<string, boolean>();
         const uniqueJobs: any[] = [];
         let duplicateCount = 0;
-        let oldJobCount = 0;
 
         for (const m of allMatches) {
             if (!m.jobs) continue;
             const job = m.jobs;
-
-            // 1. Date Filter (30 days)
-            const createdAt = job.created_at ? new Date(job.created_at).getTime() : 0;
-            const postedAt = job.posted_date ? new Date(job.posted_date).getTime() : 0;
-            const latestDate = Math.max(createdAt, postedAt);
-
-            if (latestDate < THIRTY_DAYS_AGO_MS && latestDate > 0) {
-                oldJobCount++;
-                continue;
-            }
 
             // 2. Deduplication
             const key = [
@@ -107,7 +92,7 @@ export async function GET(request: Request) {
             });
         }
 
-        console.log(`[API /api/matches] Raw: ${allMatches.length}, OldFiltered: ${oldJobCount}, Duplicates: ${duplicateCount}, Final: ${uniqueJobs.length}`);
+        console.log(`[API /api/matches] Raw: ${allMatches.length}, Duplicates: ${duplicateCount}, Final: ${uniqueJobs.length}`);
 
         return NextResponse.json(
             { jobs: uniqueJobs, count: uniqueJobs.length },

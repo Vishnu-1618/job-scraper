@@ -22,14 +22,11 @@ export async function GET(request: NextRequest) {
         const pageSize = 1000;
         let hasMore = true;
 
-        const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
         // Fetch up to 10000 jobs in batches
         while (hasMore && allJobs.length < 10000) {
             let query = supabase
                 .from('jobs')
                 .select('id,title,company,location,url,posted_date,created_at,job_type,is_remote,salary_min,salary_max,currency')
-                .gte('created_at', THIRTY_DAYS_AGO)
                 .order('created_at', { ascending: false })
                 .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -67,23 +64,11 @@ export async function GET(request: NextRequest) {
         }
 
         // --- Server-side Deduplication ---
-        const THIRTY_DAYS_AGO_MS = Date.now() - 30 * 24 * 60 * 60 * 1000;
         const seen = new Map<string, boolean>();
         const uniqueJobs: any[] = [];
         let duplicateCount = 0;
-        let oldJobCount = 0;
 
         for (const job of allJobs) {
-            // 1. Double check Date Filter (just in case)
-            const createdAt = job.created_at ? new Date(job.created_at).getTime() : 0;
-            const postedAt = job.posted_date ? new Date(job.posted_date).getTime() : 0;
-            const latestDate = Math.max(createdAt, postedAt);
-
-            if (latestDate < THIRTY_DAYS_AGO_MS && latestDate > 0) {
-                oldJobCount++;
-                continue;
-            }
-
             // 2. Deduplication
             const key = [
                 (job.title || '').toLowerCase().trim(),
@@ -99,7 +84,7 @@ export async function GET(request: NextRequest) {
             uniqueJobs.push(job);
         }
 
-        console.log(`[API /api/jobs] Raw: ${allJobs.length}, OldFiltered: ${oldJobCount}, Duplicates: ${duplicateCount}, Unique: ${uniqueJobs.length}`);
+        console.log(`[API /api/jobs] Raw: ${allJobs.length}, Duplicates: ${duplicateCount}, Unique: ${uniqueJobs.length}`);
         
         return NextResponse.json(
             { jobs: uniqueJobs },
