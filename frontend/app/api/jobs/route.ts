@@ -1,19 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://dhkiqszghdaizfugjjka.supabase.co';
-const SUPABASE_KEY =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_KEY) {
-    console.error("Missing Supabase Key");
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY!);
-
 export async function GET(request: NextRequest) {
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+        return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
+    }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const location = searchParams.get('location') || '';
