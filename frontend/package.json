@@ -1,0 +1,49 @@
+{
+  "name": "ai-job-scraper",
+  "version": "1.0.0",
+  "description": "AI-powered job scraper aggregating opportunities from LinkedIn, Indeed, Glassdoor, and Naukri with intelligent resume matching",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev -p 3001 --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [
+    "job-scraper",
+    "ai",
+    "resume-matching",
+    "linkedin",
+    "indeed",
+    "glassdoor",
+    "naukri"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@supabase/supabase-js": "^2.91.0",
+    "axios": "^1.13.2",
+    "bullmq": "^5.66.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "ioredis": "^5.9.2",
+    "lucide-react": "^0.562.0",
+    "next": "^16.1.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-is": "^19.2.4",
+    "recharts": "^3.8.0",
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.10"
+  }
+}
