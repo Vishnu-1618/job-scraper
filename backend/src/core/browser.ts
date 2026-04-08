@@ -22,14 +22,13 @@ export class BrowserManager {
 
     async init() {
         if (!this.browser) {
-            logger.info('Launching Stealth Browser...');
+            logger.info('Launching Stealth Browser (Chromium)...');
             this.browser = await chromium.launch({
                 headless: true,  // Invisible scraping
-                channel: 'chrome', // Use system Google Chrome
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
+                    '--disable-dev-shm-usage', // Critical for Render/Docker memory
                     '--disable-blink-features=AutomationControlled',
                     '--disable-features=IsolateOrigins,site-per-process',
                     '--window-size=1920,1080',
