@@ -1,6 +1,9 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import logger from '../utils/logger';
 
+// Force Playwright to use local project path instead of global cache to avoid Render cache desync issues
+process.env.PLAYWRIGHT_BROWSERS_PATH = '0';
+
 export class BrowserManager {
     private browser: Browser | null = null;
     private context: BrowserContext | null = null;
