@@ -229,52 +229,13 @@ export class LinkedInScraper extends BaseScraper {
                 }
             }
 
-            logger.info(`Extracted ${jobs.length} jobs. Starting Deep Verification (checking individual pages)...`);
-
-            const verifiedJobs: JobData[] = [];
-            // Verify each job by visiting its page
-            // We limit to first 10-15 to avoid excessive banning, or we can do all if the user accepts slowness.
-            // Given "fix it properly", we do all but with delays.
-
-            for (const job of jobs) {
-                try {
-                    logger.info(`Verifying job: ${job.title} @ ${job.company}`);
-
-                    // Navigate to job page
-                    // Use a new page or reuse? Reusing is faster but carries state.
-                    // We'll reuse 'this.page'
-                    await this.page.goto(job.url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-                    // Random delay to mimic human reading
-                    await this.delay(2000, 4000);
-
-                    // Check for closed status
-                    const content = await this.page.content();
-                    const isClosed = content.includes('No longer accepting applications') ||
-                        content.includes('This job has been closed') ||
-                        // Check for specific banner elements if possible (generic catch-all text is safer)
-                        (await this.page.$('.jobs-details-top-card__apply-error') !== null) ||
-                        (await this.page.$('.artdeco-inline-feedback--error') !== null);
-
-                    if (isClosed) {
-                        logger.warn(`Deep Check: Job is CLOSED/EXPIRED: ${job.title}. Marking for removal.`);
-                        job.is_active = false;
-                        verifiedJobs.push(job);
-                        continue;
-                    }
-
-                    job.is_active = true;
-                    verifiedJobs.push(job);
-                } catch (e: any) {
-                    logger.warn(`Verification failed for ${job.url}: ${e.message}. Keeping job as fallback.`);
-                    // If we can't load the page (auth wall etc), keep it?
-                    // "Fail Open" usually safer than "Fail Closed" for scraping, unless strictly required.
-                    verifiedJobs.push(job);
-                }
-            }
-
-            logger.info(`Deep Verification Complete. Kept ${verifiedJobs.length} / ${jobs.length} jobs.`);
-            return verifiedJobs;
+            logger.info(`Extracted ${jobs.length} jobs. Skipping deep verification per memory constraints...`);
+            
+            const MAX_JOBS = 20;
+            const finalJobs = jobs.slice(0, MAX_JOBS);
+            logger.info(`Kept ${finalJobs.length} jobs to process.`);
+            
+            return finalJobs;
 
         } catch (error: any) {
             logger.error(`LinkedIn scrape failed: ${error.message}`);
