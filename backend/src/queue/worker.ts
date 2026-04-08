@@ -34,70 +34,68 @@ export const processJob = async (job: Partial<Job> | any) => {
             return { status: 'success', count: 0 };
         }
 
-        // Process each job in chunks to avoid blocking event loop
+        // 1. Check for duplicates BEFORE processing
+        const urlsToCheck = jobs.map(j => j.url);
+        const { data: existingJobs } = await supabase
+            .from('jobs')
+            .select('url')
+            .in('url', urlsToCheck);
+
+        const existingUrls = new Set(existingJobs?.map(j => j.url) || []);
+        const newJobs = jobs.filter(j => !existingUrls.has(j.url));
+        
+        logger.info(`Filtered out ${jobs.length - newJobs.length} duplicate jobs.`);
+
+        if (newJobs.length === 0) {
+            return { status: 'success', count: 0 };
+        }
+
+        // Process each job sequentially to avoid blocking event loop or spiking RAM
         let savedCount = 0;
-        const CHUNK_SIZE = 5;
-
-        for (let i = 0; i < jobs.length; i += CHUNK_SIZE) {
-            const chunk = jobs.slice(i, i + CHUNK_SIZE);
-            await Promise.all(chunk.map(async (jobData) => {
-                try {
-                    // 0. Check for expiration/inactive status
-                    if (jobData.is_active === false) {
-                        logger.info(`Job marked as inactive/expired. Removing from DB: ${jobData.url}`);
-                        const { error } = await supabase.from('jobs').delete().match({ url: jobData.url });
-                        if (error) {
-                            logger.error(`Failed to delete expired job ${jobData.url}: ${error.message}`);
-                        } else {
-                            logger.info(`Successfully removed expired job: ${jobData.title}`);
-                        }
-                        return; // Skip further processing for this job
-                    }
-
-                    // 1. Generate Embedding
-                    const description = jobData.description || `${jobData.title} at ${jobData.company} in ${jobData.location}`;
-                    logger.info(`Generating embedding for: ${jobData.title} @ ${jobData.company}`);
-                    const embedding = await aiPipeline.generateEmbedding(description);
-
-                    if (embedding.length === 0) {
-                        logger.warn(`Zero embedding generated for ${jobData.url}`);
-                    }
-
-                    // 2. Save to DB
-                    const sourceId = SOURCE_ID_MAP[platform.toLowerCase()] || null;
-                    logger.info(`Saving job to Supabase (source_id=${sourceId}): ${jobData.url}`);
-                    const { error } = await supabase.from('jobs').upsert({
-                        title: jobData.title,
-                        company: jobData.company,
-                        location: jobData.location,
-                        description: jobData.description,
-                        url: jobData.url,
-                        source_id: sourceId,
-                        embedding, // pgvector
-
-                        // New Fields
-                        salary_min: jobData.salary_min,
-                        salary_max: jobData.salary_max,
-                        currency: jobData.currency,
-                        job_type: jobData.job_type,
-                        experience_level: jobData.experience_level,
-                        is_remote: jobData.is_remote,
-                        external_id: jobData.external_id,
-
-                        posted_date: (jobData.posted_date || jobData.postedDate) ? new Date(jobData.posted_date || jobData.postedDate!) : new Date(),
-                        created_at: new Date(),
-                    }, { onConflict: 'url' });
-
-                    if (error) {
-                        logger.error(`Failed to save job ${jobData.url}: ${error.message}`);
-                    } else {
-                        savedCount++;
-                        logger.info(`Successfully saved job: ${jobData.title}`);
-                    }
-                } catch (jobError: any) {
-                    logger.error(`Error processing individual job ${jobData.url}: ${jobError.message}`);
+        
+        for (const jobData of newJobs) {
+            try {
+                if (jobData.is_active === false) {
+                    logger.info(`Job marked as inactive/expired. Removing from DB: ${jobData.url}`);
+                    await supabase.from('jobs').delete().match({ url: jobData.url });
+                    continue;
                 }
-            }));
+
+                // 2. Temporarily disabled heavy embeddings to comply with 512MB Render RAM constraint
+                // We're leaving 'embedding' undefined or null.
+                logger.info(`Saving job to Supabase (Skipping ML embedding computation for memory): ${jobData.url}`);
+                
+                const sourceId = SOURCE_ID_MAP[platform.toLowerCase()] || null;
+                const { error } = await supabase.from('jobs').upsert({
+                    title: jobData.title,
+                    company: jobData.company,
+                    location: jobData.location,
+                    description: jobData.description,
+                    url: jobData.url,
+                    source_id: sourceId,
+                    // embedding: [] -> intentionally omitted to save RAM
+
+                    salary_min: jobData.salary_min,
+                    salary_max: jobData.salary_max,
+                    currency: jobData.currency,
+                    job_type: jobData.job_type,
+                    experience_level: jobData.experience_level,
+                    is_remote: jobData.is_remote,
+                    external_id: jobData.external_id,
+
+                    posted_date: (jobData.posted_date || jobData.postedDate) ? new Date(jobData.posted_date || jobData.postedDate!) : new Date(),
+                    created_at: new Date(),
+                }, { onConflict: 'url' });
+
+                if (error) {
+                    logger.error(`Failed to save job ${jobData.url}: ${error.message}`);
+                } else {
+                    savedCount++;
+                    logger.info(`Successfully saved job: ${jobData.title}`);
+                }
+            } catch (jobError: any) {
+                logger.error(`Error processing individual job ${jobData.url}: ${jobError.message}`);
+            }
         }
 
         logger.info(`Finished processing job ${job.id}. Saved ${savedCount}/${jobs.length} jobs.`);

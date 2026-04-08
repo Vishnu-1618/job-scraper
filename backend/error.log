@@ -467,3 +467,30 @@
 {"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Full%20Stack%20Developer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T17:54:42.918Z"}
 {"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Backend%20Developer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T17:54:58.274Z"}
 {"level":"error","message":"[Glassdoor] Scrape failed: page.$$: Target page, context or browser has been closed","timestamp":"2026-04-08T17:55:07.844Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:00:31.962Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:00:52.821Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:01:13.387Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:01:19.066Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:01:24.283Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:01:28.932Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Software%20Engineer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:01:32.606Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Full%20Stack%20Developer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:01:36.532Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Frontend%20Developer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:01:54.215Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:06:41.660Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:00.988Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:18.068Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:23.425Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:28.510Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:33.269Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Software%20Engineer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:07:36.799Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.$$: Target page, context or browser has been closed","timestamp":"2026-04-08T18:07:46.627Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Product%20Manager%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:07:50.244Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:12:22.159Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:12:44.467Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T18:12:59.719Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:13:04.627Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:13:09.033Z"}
+{"level":"error","message":"Indeed scrape failed: page.evaluate: Target page, context or browser has been closed","timestamp":"2026-04-08T18:13:14.261Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.goto: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - navigating to \"https://www.glassdoor.com/Job/jobs.htm?sc.keyword=Node.js%20Developer%20Remote\", waiting until \"domcontentloaded\"\u001b[22m\n","timestamp":"2026-04-08T18:13:16.513Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.$$: Target page, context or browser has been closed","timestamp":"2026-04-08T18:13:26.906Z"}
+{"level":"error","message":"[Glassdoor] Scrape failed: page.$$: Target page, context or browser has been closed","timestamp":"2026-04-08T18:13:36.001Z"}

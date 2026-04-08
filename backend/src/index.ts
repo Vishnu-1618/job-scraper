@@ -1,57 +1,66 @@
-
 import dotenv from 'dotenv';
-import { Worker } from 'bullmq';
-import { startScheduler } from './core/scheduler';
+import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { processJob } from './queue/worker';
-import { startResumeWorker } from './queue/resume-worker';
-import { startMatchWorker } from './queue/match-worker';
-import { redisConnection, isRedisConnected } from './config/redis';
 import logger from './utils/logger';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-const QUEUE_NAME = 'scrape-queue';
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-async function startServer() {
-  logger.info('Starting Backend Server Process...');
-  
-  // Wait a brief moment to allow Redis connection detection to settle
-  await new Promise(resolve => setTimeout(resolve, 2000));
+const PORT = process.env.PORT || 4000;
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-  if (isRedisConnected) {
-      // Initialize Job Queue Worker
-      // @ts-ignore
-      const worker = new Worker(QUEUE_NAME, processJob, {
-        connection: redisConnection,
-        concurrency: 1, 
-      });
+// Healthcheck
+app.get('/', (req: Request, res: Response) => {
+    res.json({ status: 'API is running' });
+});
 
-      worker.on('completed', (job) => {
-        logger.info(`Job ${job.id} completed!`);
-      });
+// Fetch jobs directly from DB
+app.get('/jobs', async (req: Request, res: Response) => {
+    try {
+        const { data, error } = await supabase
+            .from('jobs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
 
-      worker.on('failed', (job, err) => {
-        logger.info(`Job ${job?.id} failed: ${err.message} `);
-      });
+        if (error) throw error;
+        
+        res.json({ success: true, jobs: data });
+    } catch (error: any) {
+        logger.error(`GET /jobs error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
-      logger.info(`Worker listening on queue: ${QUEUE_NAME} `);
+// Trigger scraper manually (On-demand API flow)
+app.post('/scrape', async (req: Request, res: Response) => {
+    try {
+        const { platform = 'linkedin', keywords = 'software engineer', location = 'Remote' } = req.body;
+        
+        logger.info(`Manual scrape triggered for ${platform}`);
 
-      // Start Resume Worker
-      startResumeWorker();
+        // Construct job payload
+        const jobData = {
+            id: `manual-${Date.now()}`,
+            data: { platform, keywords, location }
+        };
 
-      // Start Match Worker
-      startMatchWorker();
-  } else {
-      logger.info('Running without Redis (fallback mode). Queue Workers disabled.');
-  }
+        // We run it securely but await its resolution to return success to client
+        // This stops background worker loops entirely.
+        const result = await processJob(jobData);
 
-  // Start Cron Scheduler (will auto-adjust based on isRedisConnected)
-  startScheduler();
+        res.json({ success: true, result });
+    } catch (error: any) {
+        logger.error(`POST /scrape error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
-  logger.info('Server initialization complete.');
-}
-
-startServer().catch((err) => {
-  logger.error('Failed to start server', err);
-  process.exit(1);
+app.listen(PORT, () => {
+    logger.info(`Server initialization complete. Listening on API Port ${PORT}`);
 });
