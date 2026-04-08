@@ -1,10 +1,5 @@
-import { chromium } from 'playwright-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import logger from '../utils/logger';
-
-// Add stealth plugin
-chromium.use(StealthPlugin());
 
 export class BrowserManager {
     private browser: Browser | null = null;
@@ -22,22 +17,15 @@ export class BrowserManager {
 
     async init() {
         if (!this.browser) {
-            logger.info('Launching Stealth Browser (Chromium)...');
+            logger.info('Launching Native Browser (Chromium)...');
             this.browser = await chromium.launch({
-                headless: true,  // Invisible scraping
+                headless: true,
                 args: [
-                    '--no-sandbox',
+                    '--no-sandbox', 
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage', // Critical for Render/Docker memory
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                    '--window-size=1920,1080',
-                    '--disable-web-security',
-                    '--allow-running-insecure-content',
-                    '--lang=en-US,en',
-                    '--disable-gpu',
-                ],
-                ignoreDefaultArgs: ['--enable-automation']
+                    '--disable-dev-shm-usage',
+                    '--disable-blink-features=AutomationControlled'
+                ]
             });
         }
     }
