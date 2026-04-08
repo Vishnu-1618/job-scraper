@@ -23,7 +23,7 @@ async function startServer() {
       // @ts-ignore
       const worker = new Worker(QUEUE_NAME, processJob, {
         connection: redisConnection,
-        concurrency: 3, 
+        concurrency: 1, 
       });
 
       worker.on('completed', (job) => {

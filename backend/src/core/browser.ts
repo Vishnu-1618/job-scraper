@@ -24,10 +24,16 @@ export class BrowserManager {
             this.browser = await chromium.launch({
                 headless: true,
                 args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu'
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--single-process",
+                    "--no-zygote",
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-background-timer-throttling",
+                    "--disable-renderer-backgrounding"
                 ]
             });
         }
@@ -132,19 +138,11 @@ export class BrowserManager {
             };
         });
 
-        // Block unnecessary resource types to speed up loading and reduce fingerprint
-        await page.route('**/*', (route) => {
-            const resourceType = route.request().resourceType();
-            const url = route.request().url();
-            if (
-                resourceType === 'image' ||
-                resourceType === 'font' ||
-                resourceType === 'media' ||
-                url.includes('google-analytics') ||
-                url.includes('doubleclick.net') ||
-                url.includes('ads.') ||
-                url.includes('fb.com')
-            ) {
+        // Block heavy resources
+        await page.route("**/*", (route) => {
+            const type = route.request().resourceType();
+
+            if (["image", "stylesheet", "font", "media"].includes(type)) {
                 route.abort();
             } else {
                 route.continue();

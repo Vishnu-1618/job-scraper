@@ -37,6 +37,9 @@ export abstract class BaseScraper {
     }
 
     protected async close() {
+        if (this.page) {
+            await this.page.close();
+        }
         await this.browserManager.close();
     }
 

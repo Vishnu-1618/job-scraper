@@ -448,3 +448,4 @@
 {"level":"error","message":"Failed to save job https://www.naukri.com/job-listings-data-engineer-amazon-payments-finance-bi-amazon-development-centre-india-pvt-ltd-bengaluru-1-to-6-years-270326503730: TypeError: fetch failed","timestamp":"2026-04-08T16:39:01.450Z"}
 {"level":"error","message":"Failed to save job https://www.naukri.com/job-listings-data-engineer-anz-banking-group-bengaluru-2-to-5-years-010426501479: TypeError: fetch failed","timestamp":"2026-04-08T16:39:01.453Z"}
 {"level":"error","message":"Failed to save job https://www.naukri.com/job-listings-data-engineer-google-india-private-limited-hyderabad-bengaluru-0-to-0-years-090725503768: TypeError: fetch failed","timestamp":"2026-04-08T16:39:01.454Z"}
+{"level":"error","message":"LinkedIn scrape failed: page.goto: Target page, context or browser has been closed","timestamp":"2026-04-08T17:42:56.862Z"}
