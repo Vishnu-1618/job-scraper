@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
 
 // Move initialization inside handler to avoid build-time/module-load crashes if envs are missing
 export async function POST(request: Request) {
@@ -61,14 +59,12 @@ export async function POST(request: Request) {
         const { data: { publicUrl } } = supabaseAdmin.storage.from('resumes').getPublicUrl(fileName);
         console.log('Upload success, URL:', publicUrl);
 
-        const connection = new IORedis('redis://localhost:6379', { maxRetriesPerRequest: null });
-        const resumeQueue = new Queue('resume-queue', { connection: connection as any });
-        await resumeQueue.add('process-resume', {
-            url: publicUrl,
-            path: fileName,
-            userId: userId
-        });
-        await resumeQueue.close();
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        fetch(`${BACKEND_URL}/process-resume`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: publicUrl, path: fileName, userId })
+        }).catch(e => console.error('Background processing trigger failed:', e));
 
         return NextResponse.json({ success: true, url: publicUrl, path: fileName });
 

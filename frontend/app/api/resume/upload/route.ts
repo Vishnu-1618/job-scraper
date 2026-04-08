@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
 
 export async function POST(request: Request) {
     console.log('=== Resume Upload API Called ===');
@@ -79,26 +77,18 @@ export async function POST(request: Request) {
         const { data: { publicUrl } } = supabaseAdmin.storage.from('resumes').getPublicUrl(fileName);
         console.log('✅ Resume upload success, URL:', publicUrl);
 
-        // Trigger backend resume processing
+        // Forward to backend processing API
         try {
-            const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
-                maxRetriesPerRequest: null
-            });
-            const resumeQueue = new Queue('resume-queue', { connection: connection as any });
+            const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+            fetch(`${BACKEND_URL}/process-resume`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: publicUrl, path: fileName, userId })
+            }).catch(e => console.error('Background processing trigger failed:', e));
 
-            await resumeQueue.add('process-resume', {
-                url: publicUrl,
-                path: fileName,
-                userId: userId
-            });
-
-            await resumeQueue.close();
-            await connection.quit();
-
-            console.log('✅ Resume processing job queued for user:', userId);
+            console.log('✅ Resume processing webhook triggered for user:', userId);
         } catch (queueError: any) {
-            console.error('⚠️ Failed to queue resume processing:', queueError.message);
-            // Don't fail the request, file is uploaded
+            console.error('⚠️ Failed to trigger resume processing webhook:', queueError.message);
         }
 
         return NextResponse.json({
