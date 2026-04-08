@@ -5,7 +5,7 @@ import { startScheduler } from './core/scheduler';
 import { processJob } from './queue/worker';
 import { startResumeWorker } from './queue/resume-worker';
 import { startMatchWorker } from './queue/match-worker';
-import { redisConnection } from './config/redis';
+import { redisConnection, isRedisConnected } from './config/redis';
 import logger from './utils/logger';
 
 dotenv.config();
@@ -13,35 +13,42 @@ dotenv.config();
 const QUEUE_NAME = 'scrape-queue';
 
 async function startServer() {
-  logger.info('Starting Backend Worker...');
+  logger.info('Starting Backend Server Process...');
+  
+  // Wait a brief moment to allow Redis connection detection to settle
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // Initialize Job Queue Worker
-  // @ts-ignore
-  const worker = new Worker(QUEUE_NAME, processJob, {
-    connection: redisConnection,
-    concurrency: 3, // Run up to 3 scraper instances in parallel
-  });
+  if (isRedisConnected) {
+      // Initialize Job Queue Worker
+      // @ts-ignore
+      const worker = new Worker(QUEUE_NAME, processJob, {
+        connection: redisConnection,
+        concurrency: 3, 
+      });
 
-  worker.on('completed', (job) => {
-    logger.info(`Job ${job.id} completed!`);
-  });
+      worker.on('completed', (job) => {
+        logger.info(`Job ${job.id} completed!`);
+      });
 
-  worker.on('failed', (job, err) => {
-    logger.info(`Job ${job?.id} failed: ${err.message} `);
-  });
+      worker.on('failed', (job, err) => {
+        logger.info(`Job ${job?.id} failed: ${err.message} `);
+      });
 
-  logger.info(`Worker listening on queue: ${QUEUE_NAME} `);
+      logger.info(`Worker listening on queue: ${QUEUE_NAME} `);
 
-  // Start Cron Scheduler
+      // Start Resume Worker
+      startResumeWorker();
+
+      // Start Match Worker
+      startMatchWorker();
+  } else {
+      logger.info('Running without Redis (fallback mode). Queue Workers disabled.');
+  }
+
+  // Start Cron Scheduler (will auto-adjust based on isRedisConnected)
   startScheduler();
 
-  // Start Resume Worker
-  startResumeWorker();
-
-  // Start Match Worker
-  startMatchWorker();
-
-  logger.info('Scheduler started.');
+  logger.info('Server initialization complete.');
 }
 
 startServer().catch((err) => {

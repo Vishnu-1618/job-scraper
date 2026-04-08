@@ -2,15 +2,6 @@ import { NextResponse } from 'next/server';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-
-
-const connection = new IORedis('redis://localhost:6379', {
-    maxRetriesPerRequest: null,
-});
-const scrapeQueue = new Queue('scrape-queue', { connection: connection as any });
-
-
-
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -40,17 +31,27 @@ export async function POST(request: Request) {
 
         console.log(`Queueing scrape for ${platform} - Keywords: ${keywords}, Location: ${location}`);
 
-        await scrapeQueue.add('scrape-job', {
-            platform,
-            keywords,
-            location,
-            // Pass new filters to the scraper/job
-            job_type,
-            experience_level,
-            salary_min,
-            is_remote
-        });
+        try {
+            const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+                maxRetriesPerRequest: null,
+            });
+            const scrapeQueue = new Queue('scrape-queue', { connection: connection as any });
+            
+            await scrapeQueue.add('scrape-job', {
+                platform,
+                keywords,
+                location,
+                job_type,
+                experience_level,
+                salary_min,
+                is_remote
+            });
 
+            await scrapeQueue.close();
+            await connection.quit();
+        } catch (queueErr: any) {
+            console.warn('⚠️ Redis offline. Scrape request ignored by backend queue:', queueErr.message);
+        }
         return NextResponse.json({ success: true, message: 'Scraping triggered successfully' });
     } catch (error: any) {
         console.error('API Error:', error);

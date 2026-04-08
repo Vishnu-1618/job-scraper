@@ -15,7 +15,7 @@ const SOURCE_ID_MAP: Record<string, number> = {
     'naukri': 4,
 };
 
-export const processJob = async (job: Job) => {
+export const processJob = async (job: Partial<Job> | any) => {
     logger.info(`Processing job ${job.id} for platform: ${job.data.platform}`);
 
     const { platform, keywords, location } = job.data;

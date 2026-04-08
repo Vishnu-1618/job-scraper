@@ -1,8 +1,9 @@
 import cron from 'node-cron';
 import { Queue } from 'bullmq';
 import { createClient } from '@supabase/supabase-js';
-import { redisConnection } from '../config/redis';
+import { redisConnection, isRedisConnected } from '../config/redis';
 import logger from '../utils/logger';
+import { processJob } from '../queue/worker';
 
 const QUEUE_NAME = 'scrape-queue';
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -18,11 +19,29 @@ const PLATFORMS = ['linkedin', 'indeed', 'glassdoor', 'naukri'];
 
 async function triggerFullScrape() {
     logger.info('[Scheduler] Starting full platform scrape...');
-    // @ts-ignore
-    const queue = new Queue(QUEUE_NAME, { connection: redisConnection });
 
     // Pick 3 random keywords each time for variety
     const shuffled = SCRAPE_KEYWORDS.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    if (!isRedisConnected) {
+        logger.info('[Scheduler] Running scrape sequentially in the background (Redis missing - Fallback mode)');
+        Promise.resolve().then(async () => {
+            for (const platform of PLATFORMS) {
+                for (const keyword of shuffled) {
+                    try {
+                        const mockJob: any = { id: `mock-${Date.now()}`, data: { platform, keywords: keyword, location: 'Remote' } };
+                        await processJob(mockJob);
+                    } catch (e: any) {
+                        logger.error(`[Scheduler] Scrape failed for ${platform}: ${e.message}`);
+                    }
+                }
+            }
+        });
+        return;
+    }
+
+    // @ts-ignore
+    const queue = new Queue(QUEUE_NAME, { connection: redisConnection });
 
     for (const platform of PLATFORMS) {
         for (const keyword of shuffled) {

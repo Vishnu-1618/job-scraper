@@ -1,5 +1,6 @@
 import { Worker, Job, Queue } from 'bullmq';
-import { redisConnection } from '../config/redis';
+import { redisConnection, isRedisConnected } from '../config/redis';
+import { processMatchJob } from './match-worker';
 import { createClient } from '@supabase/supabase-js';
 import { aiPipeline } from '../ai/pipeline';
 import logger from '../utils/logger';
@@ -12,12 +13,9 @@ const pdfParse = require('pdf-parse');
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const RESUME_QUEUE = 'resume-queue';
 
-export const startResumeWorker = () => {
-    logger.info('Starting Resume Worker...');
-
-    const worker = new Worker(RESUME_QUEUE, async (job: Job) => {
-        const { url, path, userId } = job.data;
-        logger.info(`Processing resume for user ${userId}: ${url}`);
+export const processResumeJob = async (job: Partial<Job>) => {
+    const { url, path, userId } = job.data;
+    logger.info(`Processing resume for user ${userId}: ${url}`);
 
         try {
             // 1. Download file
@@ -80,17 +78,14 @@ export const startResumeWorker = () => {
                     cleanSkills = ['Software Engineer'];
                 }
 
-                // First, trigger immediate matching to search existing jobs
-                const matchQueue = new Queue('match-queue', { connection: redisConnection });
-                const scrapeQueue = new Queue('scrape-queue', { connection: redisConnection });
-
-                // Add to match queue and wait for it to complete to see if we found enough jobs
-                logger.info(`Starting immediate job matching for user ${userId} using skills: ${cleanSkills.join(', ')}`);
-                const matchJob = await matchQueue.add('match-jobs', { userId, skills: cleanSkills });
-                
-                // We'll let the match-worker handle triggering the scraper if necessary, 
-                // or we can schedule a delayed follow-up match if a scrape does happen.
-                logger.info(`Scheduled immediate job matching for user ${userId} (Job ID: ${matchJob.id})`);
+                if (!isRedisConnected) {
+                    logger.info(`Starting immediate fallback job matching for user ${userId} using skills: ${cleanSkills.join(', ')}`);
+                    await processMatchJob({ data: { userId, skills: cleanSkills } } as any);
+                } else {
+                    const matchQueue = new Queue('match-queue', { connection: redisConnection });
+                    const matchJob = await matchQueue.add('match-jobs', { userId, skills: cleanSkills });
+                    logger.info(`Scheduled immediate job matching for user ${userId} (Job ID: ${matchJob.id})`);
+                }
 
             } catch (workflowError: any) {
                 logger.error(`Failed during resume processing workflow: ${workflowError.message}`);
@@ -102,7 +97,12 @@ export const startResumeWorker = () => {
             logger.error(`Failed to process resume: ${error.message}`);
             throw error;
         }
-    }, { connection: redisConnection });
+};
+
+export const startResumeWorker = () => {
+    logger.info('Starting Resume Worker...');
+
+    const worker = new Worker(RESUME_QUEUE, processResumeJob as unknown as (job: Job) => Promise<any>, { connection: redisConnection });
 
     worker.on('failed', (job, err) => {
         logger.error(`Resume Job ${job?.id} failed: ${err.message}`);
