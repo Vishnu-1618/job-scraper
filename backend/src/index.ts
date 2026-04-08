@@ -55,8 +55,29 @@ app.post('/scrape', async (req: Request, res: Response) => {
         const result = await processJob(jobData);
 
         res.json({ success: true, result });
-    } catch (error: any) {
+     } catch (error: any) {
         logger.error(`POST /scrape error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Process Resume endpoint (Triggered by Next.js frontend upload)
+import { processResumeJob } from './queue/resume-worker';
+app.post('/process-resume', async (req: Request, res: Response) => {
+    try {
+        const { url, path, userId } = req.body;
+        if (!url || !userId) {
+            return res.status(400).json({ success: false, error: 'url and userId are required' });
+        }
+        
+        logger.info(`Manual process-resume triggered for user ${userId}`);
+        
+        // Execute synchronously so it completes in the web process
+        await processResumeJob({ data: { url, path, userId } });
+        
+        res.json({ success: true });
+    } catch (error: any) {
+        logger.error(`POST /process-resume error: ${error.message}`);
         res.status(500).json({ success: false, error: error.message });
     }
 });
